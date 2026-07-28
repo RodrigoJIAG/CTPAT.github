@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sopa de Letras Interactiva - CTPAT y OEA</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+        p.subtitle {
+            margin: 5px 0 0 0;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 950px;
+            width: 100%;
+            padding: 0 15px;
+            margin-bottom: 30px;
+        }
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-group label {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #1e3c72;
+        }
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .game-container {
+            display: none;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .board-panel {
+            flex: 1;
+            min-width: 340px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sidebar-panel {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .stats-box {
+            display: flex;
+            justify-content: space-between;
+            background: #eef2f7;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 4px;
+            user-select: none;
+            touch-action: none;
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.95rem;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .cell:hover {
+            background: #e2e8f0;
+        }
+        .cell.selected {
+            background: #3b82f6 !important;
+            color: white !important;
+            border-color: #2563eb;
+        }
+        .cell.found {
+            background: #10b981 !important;
+            color: white !important;
+            border-color: #059669;
+        }
+        .word-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        .word-item {
+            padding: 6px 10px;
+            background: #f8fafc;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border-left: 4px solid #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .word-item.found {
+            background: #d1fae5;
+            color: #065f46;
+            border-left-color: #10b981;
+            text-decoration: line-through;
+        }
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            font-size: 1rem;
+        }
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-content h2 {
+            margin-top: 0;
+            color: #1e3c72;
+        }
+        .summary-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            margin: 15px 0;
+            font-size: 0.95rem;
+        }
+        .summary-box p {
+            margin: 6px 0;
+        }
+
+        .grid{
+    width:min(95vw,520px);
+    aspect-ratio:1;
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    gap:4px;
+}
+
+.cell{
+    width:100%;
+    aspect-ratio:1;
+    font-size:clamp(12px,2vw,20px);
+}
+
+.game-container{
+    display:flex;
+    gap:20px;
+}
+
+@media (max-width:768px){
+
+    .game-container{
+        flex-direction:column;
+    }
+
+    .board-panel,
+    .sidebar-panel{
+        width:100%;
+        min-width:0;
+    }
+
+    .stats-box{
+        font-size:16px;
+        padding:12px;
+    }
+
+    .btn{
+        padding:15px;
+        font-size:18px;
+    }
+
+    h1{
+        font-size:1.5rem;
+    }
+
+    .word-list{
+        max-height:none;
+    }
+}
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Sopa de Letras Interactiva</h1>
+        <p class="subtitle">Evaluación CTPAT y OEA - Seguridad en la Cadena de Suministro</p>
+    </header>
+
+    <div class="container">
+        <div class="panel" id="register-panel">
+            <h2 style="margin-top: 0; color: #1e3c72; font-size: 1.3rem; border-bottom: 2px solid #eef2f7; padding-bottom: 10px;">Registro de Participante</h2>
+            <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 20px;">Por favor ingresa tus datos antes de iniciar el tiempo de la prueba (Límite: 3 minutos).</p>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="input-name">Nombre Completo</label>
+                    <input type="text" id="input-name" placeholder="Ej. Juan Pérez Gómez" required>
+                </div>
+                <div class="form-group">
+                    <label for="input-caet">Número CAET</label>
+                    <input type="text" id="input-caet" placeholder="Ej. CAET-12345" required>
+                </div>
+            </div>
+            <button class="btn" id="start-btn">Comenzar Sopa de Letras (3 Minutos)</button>
+        </div>
+
+        <div class="game-container" id="game-container">
+            <div class="panel board-panel" style="margin-bottom:0;">
+                <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <div class="stats-box" style="flex: 1; margin-right: 10px;">⏱️ Tiempo: <span id="timer" style="color: #dc2626;">03:00</span></div>
+                    <div class="stats-box" style="flex: 1;">⭐ Puntos: <span id="score">0</span>/<span id="total-words">0</span></div>
+                </div>
+                <div class="grid" id="grid"></div>
+            </div>
+
+            <div class="panel sidebar-panel" style="margin-bottom:0;">
+                <h3 style="margin-top: 0; font-size: 1.1rem; color: #1e3c72; border-bottom: 2px solid #eef2f7; padding-bottom: 8px;">Palabras a Buscar</h3>
+                <ul class="word-list" id="word-list"></ul>
+                <div style="font-size: 0.85rem; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 6px;">
+                    <strong>Participante:</strong> <span id="display-participant">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="result-modal">
+        <div class="modal-content">
+            <h2 id="modal-title">¡Juego Finalizado!</h2>
+            <p id="modal-subtitle">Resultado de la evaluación de CTPAT / OEA.</p>
+            
+            <div class="summary-box">
+                <p><strong>Nombre:</strong> <span id="res-name"></span></p>
+                <p><strong>Número CAET:</strong> <span id="res-caet"></span></p>
+                <p><strong>Palabras Encontradas:</strong> <span id="res-score"></span> / 12</p>
+                <p><strong>Tiempo Restante:</strong> <span id="res-time"></span></p>
+            </div>
+
+            <button class="btn" onclick="location.reload()">Registrar Nuevo Participante</button>
+        </div>
+    </div>
+
+<script>
+// "CONTENEDOR" fue reemplazado por "SELLOS" para garantizar encaje perfecto en la cuadrícula de 12x12
+const wordsToFind = [
+    "CTPAT", "OEA", "CCTV", "PERIMETRO", "AUDITORIA",
+    "ADUANERO", "BIOMETRIA", "RESILENCIA", "TRAZABILIDAD",
+    "SELLOS", "VULNERABILIDAD", "INSPECCION"
+];
+
+const GRID_SIZE = 12;
+let grid = [];
+let placedWords = [];
+let foundWords = new Set();
+let isMouseDown = false;
+let startCell = null;
+let currentCells = [];
+let timerInterval = null;
+let timeLeft = 180; // 3 minutos en segundos
+let gameActive = false;
+
+let participantData = {
+    name: "",
+    caet: ""
+};
+
+const directions = [
+    { r: 0, c: 1 },   // Horizontal derecha
+    { r: 0, c: -1 },  // Horizontal izquierda
+    { r: 1, c: 0 },   // Vertical abajo
+    { r: -1, c: 0 },  // Vertical arriba
+    { r: 1, c: 1 },   // Diagonal abajo-derecha
+    { r: -1, c: -1 }, // Diagonal arriba-izquierda
+    { r: 1, c: -1 },  // Diagonal abajo-izquierda
+    { r: -1, c: 1 }   // Diagonal arriba-derecha
+];
+
+document.getElementById('start-btn').addEventListener('click', () => {
+    const name = document.getElementById('input-name').value.trim();
+    const caet = document.getElementById('input-caet').value.trim();
+
+    if (!name || !caet) {
+        alert("Por favor completa tu nombre y tu número CAET para continuar.");
+        return;
+    }
+
+    participantData = { name, caet };
+    document.getElementById('display-participant').textContent = `${name} (CAET: ${caet})`;
+
+    document.getElementById('register-panel').style.display = 'none';
+    document.getElementById('game-container').style.display = 'flex';
+
+    initGame();
+});
+
+function initGame() {
+    foundWords.clear();
+    timeLeft = 180;
+    gameActive = true;
+    document.getElementById('score').textContent = "0";
+    document.getElementById('total-words').textContent = wordsToFind.length;
+    
+    generateGrid();
+    renderGridUI();
+    renderWordListUI();
+    startTimer();
+}
+
+function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        if (!gameActive) return;
+        timeLeft--;
+        
+        let mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        let secs = (timeLeft % 60).toString().padStart(2, '0');
+        document.getElementById('timer').textContent = `${mins}:${secs}`;
+
+        if (timeLeft <= 0) {
+            endGame(false);
+        }
+    }, 1000);
+}
+
+function generateGrid() {
+    grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+    placedWords = [];
+
+    const sortedWords = [...wordsToFind].sort((a, b) => b.length - a.length);
+
+    for (let word of sortedWords) {
+        let placed = false;
+        let attempts = 0;
+        while (!placed && attempts < 150) {
+            attempts++;
+            let dir = directions[Math.floor(Math.random() * directions.length)];
+            let row = Math.floor(Math.random() * GRID_SIZE);
+            let col = Math.floor(Math.random() * GRID_SIZE);
+
+            if (canPlaceWord(word, row, col, dir)) {
+                placeWord(word, row, col, dir);
+                placed = true;
+            }
+        }
+    }
+
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            if (grid[r][c] === '') {
+                grid[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)];
+            }
+        }
+    }
+}
+
+function canPlaceWord(word, row, col, dir) {
+    for (let i = 0; i < word.length; i++) {
+        let r = row + i * dir.r;
+        let c = col + i * dir.c;
+        if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) return false;
+        if (grid[r][c] !== '' && grid[r][c] !== word[i]) return false;
+    }
+    return true;
+}
+
+function placeWord(word, row, col, dir) {
+    let wordCoords = [];
+    for (let i = 0; i < word.length; i++) {
+        let r = row + i * dir.r;
+        let c = col + i * dir.c;
+        grid[r][c] = word[i];
+        wordCoords.push({r, c});
+    }
+    placedWords.push({ word, coords: wordCoords });
+}
+
+function renderGridUI() {
+    const gridEl = document.getElementById('grid');
+    gridEl.innerHTML = '';
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            cell.textContent = grid[r][c];
+
+            cell.addEventListener('mousedown', (e) => onTouchStart(r, c, e));
+            cell.addEventListener('mouseenter', () => onTouchMove(r, c));
+            cell.addEventListener('touchstart', (e) => { e.preventDefault(); onTouchStart(r, c, e); });
+            cell.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                let touch = e.touches[0];
+                let target = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (target && target.classList.contains('cell')) {
+                    onTouchMove(parseInt(target.dataset.row), parseInt(target.dataset.col));
+                }
+            });
+
+            gridEl.appendChild(cell);
+        }
+    }
+
+    window.addEventListener('mouseup', onTouchEnd);
+    window.addEventListener('touchend', onTouchEnd);
+}
+
+function renderWordListUI() {
+    const listEl = document.getElementById('word-list');
+    listEl.innerHTML = '';
+    wordsToFind.forEach(word => {
+        const li = document.createElement('li');
+        li.className = `word-item ${foundWords.has(word) ? 'found' : ''}`;
+        li.id = `word-${word}`;
+        li.innerHTML = `<span>${word}</span> <span>${foundWords.has(word) ? '✓' : ''}</span>`;
+        listEl.appendChild(li);
+    });
+}
+
+function onTouchStart(r, c, e) {
+    if (!gameActive) return;
+    isMouseDown = true;
+    startCell = {r, c};
+    currentCells = [{r, c}];
+    updateSelectionUI();
+}
+
+function onTouchMove(r, c) {
+    if (!isMouseDown || !gameActive) return;
+    currentCells = getCellsInLine(startCell.r, startCell.c, r, c);
+    updateSelectionUI();
+}
+
+function onTouchEnd() {
+    if (!isMouseDown || !gameActive) return;
+    isMouseDown = false;
+
+    let selectedWord = currentCells.map(cell => grid[cell.r][cell.c]).join('');
+    let reversedWord = selectedWord.split('').reverse().join('');
+
+    let matchedWord = null;
+    if (wordsToFind.includes(selectedWord) && !foundWords.has(selectedWord)) {
+        matchedWord = selectedWord;
+    } else if (wordsToFind.includes(reversedWord) && !foundWords.has(reversedWord)) {
+        matchedWord = reversedWord;
+    }
+
+    if (matchedWord) {
+        foundWords.add(matchedWord);
+        lockFoundCells(currentCells);
+        document.getElementById(`word-${matchedWord}`).className = 'word-item found';
+        document.getElementById(`word-${matchedWord}`).innerHTML = `<span>${matchedWord}</span> <span>✓</span>`;
+        document.getElementById('score').textContent = foundWords.size;
+
+        if (foundWords.size === wordsToFind.length) {
+            endGame(true);
+        }
+    }
+
+    clearTemporarySelection();
+}
+
+function getCellsInLine(r1, c1, r2, c2) {
+    let cells = [];
+    let dr = r2 - r1;
+    let dc = c2 - c1;
+
+    let len = Math.max(Math.abs(dr), Math.abs(dc));
+    if (len === 0) return [{r: r1, c: c1}];
+
+    let stepR = dr === 0 ? 0 : dr / Math.abs(dr);
+    let stepC = dc === 0 ? 0 : dc / Math.abs(dc);
+
+    if (Math.abs(dr) !== 0 && Math.abs(dc) !== 0 && Math.abs(dr) !== Math.abs(dc)) {
+        return [{r: r1, c: c1}];
+    }
+
+    for (let i = 0; i <= len; i++) {
+        cells.push({
+            r: r1 + i * stepR,
+            c: c1 + i * stepC
+        });
+    }
+    return cells;
+}
+
+function updateSelectionUI() {
+    document.querySelectorAll('.cell').forEach(cell => {
+        let r = parseInt(cell.dataset.row);
+        let c = parseInt(cell.dataset.col);
+        if (!cell.classList.contains('found')) {
+            cell.classList.remove('selected');
+            if (currentCells.some(cellCoord => cellCoord.r === r && cellCoord.c === c)) {
+                cell.classList.add('selected');
+            }
+        }
+    });
+}
+
+function lockFoundCells(cells) {
+    cells.forEach(coord => {
+        let cell = document.querySelector(`.cell[data-row='${coord.r}'][data-col='${coord.c}']`);
+        if (cell) {
+            cell.classList.remove('selected');
+            cell.classList.add('found');
+        }
+    });
+}
+
+function clearTemporarySelection() {
+    document.querySelectorAll('.cell').forEach(cell => {
+        if (!cell.classList.contains('found')) {
+            cell.classList.remove('selected');
+        }
+    });
+    currentCells = [];
+}
+
+async function endGame(completed) {
+    gameActive = false;
+    clearInterval(timerInterval);
+
+    // Calcular tiempo utilizado
+    let timeUsedSeconds = 180 - timeLeft;
+    let minsUsed = Math.floor(timeUsedSeconds / 60).toString().padStart(2, '0');
+    let secsUsed = (timeUsedSeconds % 60).toString().padStart(2, '0');
+    let timeUsedFormatted = `${minsUsed}:${secsUsed}`;
+
+    // 1. PREPARAR DATOS
+    let newRecord = {
+        name: participantData.name,
+        caet: participantData.caet,
+        score: foundWords.size,
+        timeUsed: timeUsedFormatted,
+        timeUsedSeconds: timeUsedSeconds,
+        date: new Date().toLocaleString()
+    };
+
+    // Guardar en LocalStorage
+    let existingRecords = JSON.parse(localStorage.getItem('sopa_resultados')) || [];
+    existingRecords.push(newRecord);
+    localStorage.setItem('sopa_resultados', JSON.stringify(existingRecords));
+
+    // 2. ENVIAR DATOS A GOOGLE APPS SCRIPT
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjSI2CEtCtR15HgSm2t3KC1EXTak2oYDl54MCpIICcTFcx6A9hJyVcTXM-EW4oPL2A/exec';0
+
+    try {
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: JSON.stringify(newRecord)
+        });
+        console.log("Datos enviados correctamente a Google Sheets");
+    } catch (error) {
+        console.error("Error al enviar los datos:", error);
+    }
+
+    // 3. ACTUALIZAR MODAL CON DATOS ACTUALES
+    document.getElementById('modal-title').textContent = completed ? "¡Excelente Trabajo! 🎉" : "¡Tiempo Agotado! ⏱️";
+    document.getElementById('modal-subtitle').textContent = completed ? "Has completado todas las palabras correctamente." : "Se ha terminado el límite de 3 minutos.";
+
+    document.getElementById('res-name').textContent = participantData.name;
+    document.getElementById('res-caet').textContent = participantData.caet;
+    document.getElementById('res-score').textContent = foundWords.size;
+    
+    let minsRest = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    let secsRest = (timeLeft % 60).toString().padStart(2, '0');
+    document.getElementById('res-time').textContent = timeLeft > 0 ? `${minsRest}:${secsRest} restantes` : "00:00 (Agotado)";
+
+    let modalContent = document.querySelector('.modal-content');
+
+    // 4. CREAR/ACTUALIZAR CUADRO DEL MEJOR RESULTADO
+    let bestRecordBox = document.getElementById('best-record-box');
+    if (!bestRecordBox) {
+        bestRecordBox = document.createElement('div');
+        bestRecordBox.id = 'best-record-box';
+        bestRecordBox.style.marginTop = '15px';
+        bestRecordBox.style.padding = '12px';
+        bestRecordBox.style.backgroundColor = '#fef3c7';
+        bestRecordBox.style.border = '1px solid #f59e0b';
+        bestRecordBox.style.borderRadius = '8px';
+        bestRecordBox.style.textAlign = 'left';
+        bestRecordBox.style.color = '#78350f';
+        
+        // Insertar antes del botón si existe, o al final
+        let btnView = document.getElementById('btn-view-results');
+        if (btnView) {
+            modalContent.insertBefore(bestRecordBox, btnView);
+        } else {
+            modalContent.appendChild(bestRecordBox);
+        }
+    }
+
+    bestRecordBox.innerHTML = `<strong>🏆 Mejor Resultado General:</strong><br><span style="font-size:0.9em;">Cargando récord...</span>`;
+
+    // Consultar el mejor resultado a Google Apps Script
+    fetch(SCRIPT_URL)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.bestRecord) {
+                let rec = data.bestRecord;
+                bestRecordBox.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 5px;">🏆 Mejor Resultado del Juego</div>
+                    <div><strong>Nombre:</strong> ${rec.name}</div>
+                    <div><strong>CAET:</strong> ${rec.caet}</div>
+                    <div><strong>Puntaje:</strong> ${rec.score} palabras</div>
+                    <div><strong>Tiempo usado:</strong> ${rec.timeUsed}</div>
+                `;
+            } else {
+                bestRecordBox.innerHTML = `<strong>🏆 Mejor Resultado:</strong> Aún no hay registros suficientes.`;
+            }
+        })
+        .catch(err => {
+            console.error("Error obteniendo el mejor récord:", err);
+            bestRecordBox.innerHTML = `<strong>🏆 Mejor Resultado:</strong> No se pudo cargar el récord.`;
+        });
+
+    // 5. AGREGAR BOTÓN DE RESULTADOS
+    if (!document.getElementById('btn-view-results')) {
+        let resultsBtn = document.createElement('a');
+        resultsBtn.id = 'btn-view-results';
+        resultsBtn.href = 'resultados.html';
+        resultsBtn.className = 'btn';
+        resultsBtn.style.backgroundColor = '#10b981';
+        resultsBtn.style.marginTop = '15px';
+        resultsBtn.style.display = 'block';
+        resultsBtn.style.textDecoration = 'none';
+        resultsBtn.textContent = '📊 Ver Tablero de Resultados';
+        modalContent.appendChild(resultsBtn);
+    }
+
+    document.getElementById('result-modal').style.display = 'flex';
+}
+</script>
+</body>
+</html>

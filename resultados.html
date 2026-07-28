@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Resultados - CTPAT y OEA</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eef2f7;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        h1 { margin: 0; color: #1e3c72; font-size: 1.5rem; }
+        .table-responsive { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        th {
+            background-color: #1e3c72;
+            color: white;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        tr:hover { background-color: #f1f5f9; }
+        .badge {
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .empty-msg { text-align: center; padding: 30px; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🏆 Registro de Resultados de Participantes</h1>
+            <a href="index.html" class="btn btn-primary">🎮 Ir a la Sopa de Letras</a>
+        </header>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Fecha / Hora</th>
+                        <th>Nombre Completo</th>
+                        <th>Número CAET</th>
+                        <th>Palabras</th>
+                        <th>Tiempo Usado</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    </tbody>
+            </table>
+            <div id="no-data" class="empty-msg" style="display:none;">
+                Aún no hay participantes registrados.
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-danger" onclick="clearRecords()">🗑️ Borrar Historial</button>
+        </div>
+    </div>
+
+    <script>
+        function loadResults() {
+            const tbody = document.getElementById('results-body');
+            const noData = document.getElementById('no-data');
+            tbody.innerHTML = '';
+
+            // Obtener registros de LocalStorage
+            let records = JSON.parse(localStorage.getItem('sopa_resultados')) || [];
+
+            if (records.length === 0) {
+                noData.style.display = 'block';
+                return;
+            }
+
+            noData.style.display = 'none';
+
+            // Ordenar: Primero por mayor cantidad de palabras, luego por menor tiempo usado
+            records.sort((a, b) => {
+                if (b.score !== a.score) {
+                    return b.score - a.score;
+                }
+                return a.timeUsedSeconds - b.timeUsedSeconds;
+            });
+
+            records.forEach((rec, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${index + 1}</strong></td>
+                    <td>${rec.date}</td>
+                    <td>${rec.name}</td>
+                    <td>${rec.caet}</td>
+                    <td><span class="badge">${rec.score} / 12</span></td>
+                    <td>⏱️ ${rec.timeUsed}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearRecords() {
+            if (confirm("¿Estás seguro de que deseas borrar todo el historial de resultados?")) {
+                localStorage.removeItem('sopa_resultados');
+                loadResults();
+            }
+        }
+
+        window.onload = loadResults;
+    </script>
+</body>
+</html>
